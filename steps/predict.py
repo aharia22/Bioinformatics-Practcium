@@ -8,6 +8,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 import argparse
+import warnings
+warnings.filterwarnings('ignore')
 
 def ReadFeatureAndLabel(feature_file, label_file):
 	feature = np.load(feature_file)

@@ -5,6 +5,9 @@ from pathlib import Path
 import os
 from sklearn.decomposition import PCA
 
+import warnings
+warnings.filterwarnings('ignore')
+
 # Get chromosome length
 def GetChrLength(chrom_size, chrom):
     tab = pd.read_table(chrom_size, header=None, sep='\t')
@@ -13,7 +16,8 @@ def GetChrLength(chrom_size, chrom):
     return np.max(tab['size'][tab['chr'] == chrom])
     
 # Read file
-def ReadBedFile(file, chr_len):
+def ReadBedFile(chrom, file, chr_size_dir):
+    chr_len = GetChrLength(chr_size_dir / "hg38.chrom.sizes.txt", chrom)
     unit_info = np.zeros(chr_len)
     with open(file, 'r') as f:
         count = 0
@@ -22,6 +26,8 @@ def ReadBedFile(file, chr_len):
                 count += 1
                 continue
             line = l.strip('\n').split('\t')
+            if line[0] != chrom:
+                continue
             unit_info[int(line[1]):int(line[2])+1] += 1
             
             count += 1
@@ -61,16 +67,14 @@ if __name__ == "__main__":
 
 	for chrom in chrom_list:
 		embed = []
-		chr_len = GetChrLength(chr_size_dir / "hg38.chrom.sizes.txt", chrom)
-		read_dir = data_dir / chrom
-		print(chrom, chr_len)
+		read_dir = data_dir
 		for bedfile in sorted(os.listdir(read_dir)):
 			print("Find bedfile:", bedfile)
-			unit_info = ReadBedFile(read_dir / bedfile, chr_len)
+			unit_info = ReadBedFile(chrom, read_dir / bedfile, chr_size_dir)
 			binned_unit_info = binning_chr(unit_info, res)
 			embed.append(binned_unit_info)
 		embed_concat = np.concatenate(embed, axis=0).reshape((nsamples, len(binned_unit_info)))
-		embed_pca = dim_reduction(embed_concat, 5)
+		embed_pca = dim_reduction(embed_concat, 1)
 		embed_chr.append(embed_pca)
 
 	chr_features = np.concatenate(embed_chr, axis=1)
