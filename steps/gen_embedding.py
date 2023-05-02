@@ -53,28 +53,30 @@ if __name__ == "__main__":
 	parser.add_argument('--data_dir', type=Path)
 	parser.add_argument('--chr_size_dir', type=Path)
 	parser.add_argument('--res', type=int)
-	parser.add_argument('--nsamples', type=int)
+	# parser.add_argument('--nsamples', type=int)
 
 	args = parser.parse_args()
 	data_dir = args.data_dir
 	chr_size_dir = args.chr_size_dir
 	res = args.res
-	nsamples = args.nsamples
 	
 	embed_chr = []
 	chrom_list = ["chr%d"%(i+1) for i in range(22)]
 	print(chrom_list)
-
+    
+	nsamples = 0
+	for _ in sorted(os.listdir(data_dir)):
+		nsamples += 1
+	
 	for chrom in chrom_list:
 		embed = []
-		read_dir = data_dir
-		for bedfile in sorted(os.listdir(read_dir)):
+		for bedfile in sorted(os.listdir(data_dir)):
 			print("Find bedfile:", bedfile)
-			unit_info = ReadBedFile(chrom, read_dir / bedfile, chr_size_dir)
+			unit_info = ReadBedFile(chrom, data_dir / bedfile, chr_size_dir)
 			binned_unit_info = binning_chr(unit_info, res)
 			embed.append(binned_unit_info)
 		embed_concat = np.concatenate(embed, axis=0).reshape((nsamples, len(binned_unit_info)))
-		embed_pca = dim_reduction(embed_concat, 1)
+		embed_pca = dim_reduction(embed_concat, 5)
 		embed_chr.append(embed_pca)
 
 	chr_features = np.concatenate(embed_chr, axis=1)
